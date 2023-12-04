@@ -1,64 +1,78 @@
 "use strict";
-var __spreadArray = (this && this.__spreadArray) || function (to, from, pack) {
-    if (pack || arguments.length === 2) for (var i = 0, l = from.length, ar; i < l; i++) {
-        if (ar || !(i in from)) {
-            if (!ar) ar = Array.prototype.slice.call(from, 0, i);
-            ar[i] = from[i];
-        }
-    }
-    return to.concat(ar || Array.prototype.slice.call(from));
-};
 Object.defineProperty(exports, "__esModule", { value: true });
-var fs = require("fs");
-// const input : string  = fs.readFileSync('./test-input.txt', 'utf-8');
-var input = fs.readFileSync('./test-input.txt', 'utf-8');
-// get della lunghezza della riga (x = es 10)
-var rowLenght = input.indexOf('\n');
-var solution3 = function (input) {
-    var symbols = ['*'];
-    var reg = /\d+/g;
-    // Collect gear coordinates and adjacent positions
-    var gearCoords = [];
-    symbols.forEach(function (symbol) {
-        input.forEach(function (row, i) {
-            row.split('').forEach(function (char, j) {
-                if (char === symbol) {
-                    gearCoords.push([
-                        [i - 1, j],
-                        [i + 1, j],
-                        [i, j - 1],
-                        [i, j + 1],
-                        [i - 1, j - 1],
-                        [i - 1, j + 1],
-                        [i + 1, j - 1],
-                        [i + 1, j + 1],
-                    ]);
-                }
-            });
+var _3_1 = require("./input/3");
+var numbers = [];
+var symbols = [];
+var gears = [];
+var lines = _3_1.input.split('\n');
+var _loop_1 = function (i, line) {
+    // Extract the positions of all symbols (i.e. characters that are not digits and not the dot)
+    Array.from(line.matchAll(/[^0-9|.]/g)).forEach(function (match) {
+        return symbols.push({
+            line: i,
+            index: match.index
         });
     });
-    // Collect coordinates and values of numbers
-    var numbers = input.flatMap(function (row, i) {
-        return __spreadArray([], row.matchAll(reg), true).map(function (match) {
-            var _a;
-            var start = (_a = match.index) !== null && _a !== void 0 ? _a : 0;
-            var wordCoords = Array.from({ length: match[0].length }, function (_, j) { return [i, start + j]; });
-            return { coords: wordCoords, val: +match[0] };
+    // Extract the positions (start and end) and values of all numbers
+    Array.from(line.matchAll(/[0-9]+/g)).forEach(function (match) {
+        return numbers.push({
+            line: i,
+            start: match.index,
+            end: match.index + match[0].length - 1,
+            number: parseInt(match[0])
         });
     });
-    // Calculate value based on numbers adjacent to gears
-    var val = 0;
-    gearCoords.forEach(function (gear) {
-        var adjacentNumbers = numbers.filter(function (_a) {
-            var coords = _a.coords;
-            return gear.some(function (gearCoord) { return coords.some(function (coord) { return coord[0] === gearCoord[0] && coord[1] === gearCoord[1]; }); });
+    Array.from(line.matchAll(/\*/g)).forEach(function (match) {
+        return gears.push({
+            line: i,
+            index: match.index
         });
-        if (adjacentNumbers.length > 1) {
-            val += adjacentNumbers.reduce(function (acc, _a) {
-                var val = _a.val;
-                return acc * val;
-            }, 1);
-        }
     });
-    return val;
 };
+for (var _i = 0, _a = lines.entries(); _i < _a.length; _i++) {
+    var _b = _a[_i], i = _b[0], line = _b[1];
+    _loop_1(i, line);
+}
+/**
+ * Checks whether or not a symbol is nearby a number.
+ * This is true for the following fields:
+ *
+ * ┌───┬───┬───┬───┬───┐
+ * │ x │ x │ x │ x │ x │
+ * ├───┼───┼───┼───┼───┤
+ * │ x │ 1 │ 2 │ 3 │ x │
+ * ├───┼───┼───┼───┼───┤
+ * │ x │ x │ x │ x │ x │
+ * └───┴───┴───┴───┴───┘
+ *
+ * This means that the symbol has to be in
+ * - either the same line or an adjacent line, and
+ * - between (start - 1) and (end + 1).
+ *
+ * @param number - number to check
+ * @param symbol - symbol to check
+ * @returns whether or not the symbol is adjacent to the number
+ */
+var isNearby = function (number, symbol) {
+    return symbol.line <= number.line + 1 &&
+        symbol.line >= number.line - 1 &&
+        symbol.index >= number.start - 1 &&
+        symbol.index <= number.end + 1;
+};
+// For part 1, all numbers with an adjacent symbol are valid numbers.
+var validNumbers = numbers.filter(function (number) {
+    return symbols.some(function (symbol) { return isNearby(number, symbol); });
+});
+// For part 2, all gear symbols are valid that have exactly two adjacent number.
+var validGears = gears
+    .map(function (gear) {
+    var matchingNumbers = numbers.filter(function (number) { return isNearby(number, gear); });
+    return {
+        isValid: matchingNumbers.length === 2,
+        // the gear ratio is the product of the matching numbers
+        gearRatio: matchingNumbers.reduce(function (acc, number) { return (acc === 0 ? number.number : acc * number.number); }, 0)
+    };
+})
+    .filter(function (gear) { return gear.isValid; });
+console.log('Part 1: ', validNumbers.reduce(function (acc, number) { return number.number + acc; }, 0));
+console.log('Part 2: ', validGears.reduce(function (acc, gear) { return acc + gear.gearRatio; }, 0));
