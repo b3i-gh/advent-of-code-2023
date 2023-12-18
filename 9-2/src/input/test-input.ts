@@ -1,0 +1,1 @@
+export const input = `10 13 16 21 30 45`;
