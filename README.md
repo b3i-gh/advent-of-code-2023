@@ -20,3 +20,4 @@ options:
 - **day06:** 16/01/25, part1 24', part2 10'
 - **day07:** 20/01/25, part1 2h, part2 \*
 - **day08:** 27/01/25, part1 14', part2 22'
+- **day09:** 28/01/25, part1 30', part2 10'
